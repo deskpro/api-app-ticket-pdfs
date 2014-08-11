@@ -17,14 +17,18 @@ Refer to the composer website for instructions on how to install composer on you
 Usage
 -----
 
-*1. Prepare ticket data*
+*1. Set API details*
+
+Update config.php to set your DeskPRO API credentials
+
+*3. Prepare ticket data*
 
 From the command-line, execute the `cmd-downlaod-tickets.php` command to download your ticket data from your site:
 
     $ php cmd-create-pdfs.php
     Written!
 
-*2. Generate PDFs*
+*3. Generate PDFs*
 
 Once you have downlaoded your ticket data, you can run the `cmd-create-pdfs.php` command to generate PDF files:
 
