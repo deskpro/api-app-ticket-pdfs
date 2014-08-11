@@ -21,7 +21,7 @@ Usage
 
 Update config.php to set your DeskPRO API credentials
 
-*3. Prepare ticket data*
+*2. Prepare ticket data*
 
 From the command-line, execute the `cmd-downlaod-tickets.php` command to download your ticket data from your site:
 
