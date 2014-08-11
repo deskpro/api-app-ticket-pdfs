@@ -11,6 +11,9 @@ This example uses composer to install mpdf and the DeskPRO PHP API library. Run 
     cd path/to/api-app-ticket-pdfs
     php composer.phar install
 
+Refer to the composer website for instructions on how to install composer on your computer:
+[https://getcomposer.org/doc/01-basic-usage.md](https://getcomposer.org/doc/01-basic-usage.md)
+
 Usage
 -----
 
