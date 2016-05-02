@@ -1,6 +1,6 @@
 <?php
 
-require 'autoload.php';
+require 'vendor/autoload.php';
 require 'src/CollectTickets.php';
 
 use DeskPRO\PdfTicketList\CollectTickets;
