@@ -7,7 +7,7 @@ class GenerateTicketsPdf
     private $tickets;
     private $mpdf;
 
-    public function __construct(\mPDF $mpdf, array $tickets)
+    public function __construct(\Mpdf\Mpdf $mpdf, array $tickets)
     {
         $this->pdfGenerator = $mpdf;
         $this->tickets = $tickets;

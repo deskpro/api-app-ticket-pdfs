@@ -25,7 +25,7 @@ Update config.php to set your DeskPRO API credentials
 
 From the command-line, execute the `cmd-downlaod-tickets.php` command to download your ticket data from your site:
 
-    $ php cmd-create-pdfs.php
+    $ php cmd-downlaod-tickets.php
     Written!
 
 *3. Generate PDFs*
