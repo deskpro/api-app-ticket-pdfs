@@ -1,7 +1,7 @@
 <?php
 
 require 'vendor/autoload.php';
-require 'src/GenerateTicketsPdf.php';
+require 'src/PdfTicketList/GenerateTicketsPdf.php';
 
 use DeskPRO\PdfTicketList\GenerateTicketsPdf;
 
@@ -22,7 +22,7 @@ $pagesRequired = ceil(count($allTickets) / $numberPerPage);
 
 $pagesTickets = array_slice($allTickets, $numberPerPage * ($pageToGenerate - 1), $numberPerPage);
 
-$pdfGenerator = new GenerateTicketsPdf(new \mPDF(), $pagesTickets);
+$pdfGenerator = new GenerateTicketsPdf(new \Mpdf\Mpdf(), $pagesTickets);
 $pdfGenerator->output('tickets-' . $pageToGenerate . '.pdf');
 
 echo "Just did page $pageToGenerate there's a total of $pagesRequired required.";

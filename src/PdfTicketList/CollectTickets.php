@@ -2,37 +2,80 @@
 
 namespace DeskPRO\PdfTicketList;
 
+use DeskPROClient\Api\DeskPROApi;
+use DeskPRO\Api\Paginator;
+
 class CollectTickets
 {
-    const MOST_RECENT = 'ticket.date_created:desc';
-
+    const ITEMS_PER_PAGE_MAX_COUNT = 50;
+    
+    /**
+     *
+     * @var DeskPROApi
+     */
     private $api;
 
-    public function __construct(\DpApi $api)
+    /**
+     *
+     * @param DeskPROApi $api
+     */
+    public function __construct(DeskPROApi $api)
     {
         $this->api = $api;
     }
 
+    /**
+     *
+     * @param int $numberOfTickets
+     * @return array
+     */
     public function getMostRecentTickets($numberOfTickets = 50)
     {
-        $page = 1;
-        $lastRetrievalCount = -1;
         $tickets = array();
+        $ticketsRequest = $this->api->tickets()
+            ->find()
+            ->orderBy('date_created')
+            ->orderDir('desc')
+            ->count(min(self::ITEMS_PER_PAGE_MAX_COUNT, $numberOfTickets))
+            ->sideload(['person']);
 
-        while($numberOfTickets > count($tickets) && $lastRetrievalCount !== 0) {
-            $requiredNumberOfTicketsLeft = $numberOfTickets - count($tickets);
+        foreach ((new Paginator($ticketsRequest)) as $ticketsResponse) {
+            
+            foreach ($ticketsResponse->getData() as $ticketData) {
 
-            $newResults = $this->api->findTickets(array(), $page, self::MOST_RECENT);
-            $ticketsWeWant = array_slice($newResults['tickets'], 0, $requiredNumberOfTicketsLeft);
-            $lastRetrievalCount = count($ticketsWeWant);
+                $linked = array(
+                    'person' => $ticketsResponse->getLinked()['person'],
+                    'ticket_attachment' => array()
+                );
 
-            foreach ($ticketsWeWant as $ticket) {
-                $messages = $this->api->getTicketMessages($ticket['id']);
+                // collect all ticket messages and linked data
+                $messagesData = array();
+                $messagesRequest = $this->api->tickets()
+                    ->get($ticketData['id'])
+                    ->messages()
+                    ->find()
+                    ->count(self::ITEMS_PER_PAGE_MAX_COUNT)
+                    ->sideload(['ticket_attachment', 'person']);
 
-                $tickets[] = $this->getTicketPdfView($ticket, $messages['messages']);
+                foreach ((new Paginator($messagesRequest)) as $messagesResponse) {
+
+                    $messagesData = array_merge($messagesData, $messagesResponse->getData());
+                    $linked['person'] += $messagesResponse->getLinked()['person'];
+                    $linked['ticket_attachment'] += isset($messagesResponse->getLinked()['ticket_attachment'])
+                                                    ? $messagesResponse->getLinked()['ticket_attachment']
+                                                    : array();
+                }
+
+                $tickets[] = $this->getTicketPdfView(
+                    $ticketData,
+                    $messagesData,
+                    $linked
+                );
+
+                if (count($tickets) >= $numberOfTickets) {
+                    return $tickets;
+                }
             }
-
-            $page++;
         }
 
         return $tickets;
@@ -44,22 +87,31 @@ class CollectTickets
      * Means we don't have to pass around all of the data, we don't really need.
      *
      * @param array $ticket
+     * @param array $messages
+     * @param array $linked
+     * @return array
      */
-    private function getTicketPdfView(array $ticket, array $messages)
+    private function getTicketPdfView(array $ticket, array $messages, array $linked)
     {
         // boring array for now, will probably change to value object
         $view = array();
 
         $view['id'] = $ticket['id'];
         $view['subject'] = $ticket['subject'];
-        $view['name'] = $ticket['person']['name'];
+        $view['name'] = $linked['person'][$ticket['person']]['name'];
 
-        $view['messages'] = $this->getMessagePdfView($messages);
+        $view['messages'] = $this->getMessagePdfView($messages, $linked);
 
         return $view;
     }
 
-    private function getMessagePdfView(array $messages)
+    /**
+     *
+     * @param array $messages
+     * @param array $linked
+     * @return array
+     */
+    private function getMessagePdfView(array $messages, array $linked)
     {
         $messageView = array();
 
@@ -67,8 +119,8 @@ class CollectTickets
             $view = array(
                 'id' => $message['id'],
                 'date_created' => $message['date_created'],
-                'from_name' => $message['person']['name'],
-                'is_from_agent' => $message['person']['is_agent'],
+                'from_name' => $linked['person'][$message['person']]['name'],
+                'is_from_agent' => $linked['person'][$message['person']]['is_agent'],
                 'is_agent_note' => $message['is_agent_note'],
                 'body' => $message['message'],
             );
@@ -76,9 +128,9 @@ class CollectTickets
             $view['attachments'] = array();
             foreach ($message['attachments'] as $attachment) {
                 $attachment = array(
-                    'authcode' => $attachment['blob']['authcode'],
-                    'filename' => $attachment['blob']['filename'],
-                    'absolute_url' => $attachment['blob']['download_url'],
+                    'authcode' => $linked['ticket_attachment'][$attachment]['blob']['blob_auth'],
+                    'filename' => $linked['ticket_attachment'][$attachment]['blob']['filename'],
+                    'absolute_url' => $linked['ticket_attachment'][$attachment]['blob']['download_url'],
                 );
 
                 $view['attachments'][] = $attachment;

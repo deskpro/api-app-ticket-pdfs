@@ -1,6 +1,6 @@
 {
     "require": {
-        "mpdf/mpdf": "v5.7.1",
-        "deskpro/deskpro-api-php": "dev-master"
+        "mpdf/mpdf": "^7.0",
+        "deskpro/deskpro-api-client-php": "dev-master"
     }
 }
